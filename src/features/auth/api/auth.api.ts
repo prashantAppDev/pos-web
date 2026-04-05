@@ -1,5 +1,5 @@
 import { axiosInstance } from '../../../lib/axios';
-import type { AuthResponse, LoginRequest, UserResponse } from '../../../types/auth.types';
+import type { AcceptInviteRequest, AuthResponse, LoginRequest, UserResponse } from '../../../types/auth.types';
 import type { MessageResponse } from '../../../types/common.types';
 
 export const login = async (request: LoginRequest): Promise<AuthResponse> => {
@@ -15,6 +15,11 @@ export const refresh = async (): Promise<AuthResponse> => {
 
 export const logout = async (): Promise<MessageResponse> => {
   const { data } = await axiosInstance.post<MessageResponse>('/auth/logout');
+  return data;
+};
+
+export const acceptInvite = async (request: AcceptInviteRequest): Promise<AuthResponse> => {
+  const { data } = await axiosInstance.post<AuthResponse>('/auth/accept-invite', request);
   return data;
 };
 

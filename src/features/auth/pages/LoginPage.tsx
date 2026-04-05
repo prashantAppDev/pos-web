@@ -2,6 +2,7 @@ import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Form, Input, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useLogin } from '../hooks/useAuth';
+import { getHomeRoute } from '../../../router/utils/getHomeRoute';
 import type { LoginRequest } from '../../../types/auth.types';
 
 const { Title, Text } = Typography;
@@ -11,7 +12,7 @@ export const LoginPage = () => {
   const { mutate: login, isPending, error } = useLogin();
 
   const onFinish = (values: LoginRequest) => {
-    login(values, { onSuccess: () => navigate('/tenants', { replace: true }) });
+    login(values, { onSuccess: (data) => navigate(getHomeRoute(data.user.role), { replace: true }) });
   };
 
   return (

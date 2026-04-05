@@ -9,6 +9,11 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
+export interface AcceptInviteRequest {
+  token: string;
+  password: string;
+}
+
 export interface UserResponse {
   id: string;
   name: string;

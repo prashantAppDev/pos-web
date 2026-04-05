@@ -1,6 +1,7 @@
 import { axiosInstance } from '../../../lib/axios';
 import type {
   CreateTenantRequest,
+  TenantCreatedResponse,
   TenantListParams,
   TenantResponse,
   UpdateTenantRequest,
@@ -17,8 +18,8 @@ export const getTenant = async (id: string): Promise<TenantResponse> => {
   return data;
 };
 
-export const createTenant = async (request: CreateTenantRequest): Promise<TenantResponse> => {
-  const { data } = await axiosInstance.post<TenantResponse>('/super-admin/tenants', request);
+export const createTenant = async (request: CreateTenantRequest): Promise<TenantCreatedResponse> => {
+  const { data } = await axiosInstance.post<TenantCreatedResponse>('/super-admin/tenants', request);
   return data;
 };
 

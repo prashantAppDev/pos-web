@@ -15,6 +15,11 @@ export interface TenantResponse {
   updatedAt: string;
 }
 
+export interface TenantCreatedResponse {
+  tenant: TenantResponse;
+  inviteLink: string;
+}
+
 export interface CreateTenantRequest {
   name: string;
   email: string;

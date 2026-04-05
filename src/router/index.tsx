@@ -1,21 +1,26 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { AuthGuard } from './guards/AuthGuard';
 import { RoleGuard } from './guards/RoleGuard';
+import { RoleRedirect } from './components/RoleRedirect';
 import { SuperAdminLayout } from '../layouts/SuperAdminLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
+import { AcceptInvitePage } from '../features/auth/pages/AcceptInvitePage';
+import { UnauthorizedPage } from '../features/auth/pages/UnauthorizedPage';
 import { TenantListPage } from '../features/tenants/pages/TenantListPage';
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 
 export const router = createBrowserRouter([
+  // ── Public ────────────────────────────────────────────────
+  { path: '/login',          element: <LoginPage /> },
+  { path: '/accept-invite',  element: <AcceptInvitePage /> },
+  { path: '/unauthorized',   element: <UnauthorizedPage /> },
+
+  // ── Authenticated ─────────────────────────────────────────
   {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    // All routes below require a valid session
     element: <AuthGuard />,
     children: [
+      // Super Admin
       {
-        // Super admin routes
         element: <RoleGuard allowedRoles={['SUPER_ADMIN']} />,
         children: [
           {
@@ -26,15 +31,19 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      // Future: tenant routes for ADMIN/MANAGER/CASHIER
+
+      // Tenant users (ADMIN / MANAGER / CASHIER)
+      {
+        element: <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'CASHIER']} />,
+        children: [
+          // TODO: wrap in TenantLayout once built
+          { path: '/dashboard', element: <DashboardPage /> },
+        ],
+      },
     ],
   },
-  {
-    path: '/',
-    element: <Navigate to="/tenants" replace />,
-  },
-  {
-    path: '*',
-    element: <Navigate to="/" replace />,
-  },
+
+  // ── Fallback ──────────────────────────────────────────────
+  { path: '/',  element: <RoleRedirect /> },
+  { path: '*',  element: <RoleRedirect /> },
 ]);
