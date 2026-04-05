@@ -18,6 +18,11 @@ export const logout = async (): Promise<MessageResponse> => {
   return data;
 };
 
+export const validateInvite = async (token: string): Promise<MessageResponse> => {
+  const { data } = await axiosInstance.get<MessageResponse>('/auth/validate-invite', { params: { token } });
+  return data;
+};
+
 export const acceptInvite = async (request: AcceptInviteRequest): Promise<AuthResponse> => {
   const { data } = await axiosInstance.post<AuthResponse>('/auth/accept-invite', request);
   return data;

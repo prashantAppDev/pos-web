@@ -1,9 +1,9 @@
 import { LockOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Form, Input, Typography } from 'antd';
-import { useEffect, useState } from 'react';
+import { Alert, Button, Card, Form, Input, Spin, Typography } from 'antd';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { acceptInvite } from '../api/auth.api';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { acceptInvite, validateInvite } from '../api/auth.api';
 import { useAuthStore } from '../../../store/auth.store';
 import { getHomeRoute } from '../../../router/utils/getHomeRoute';
 
@@ -16,10 +16,18 @@ export const AcceptInvitePage = () => {
   const setAuth = useAuthStore((s) => s.setAuth);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Redirect away if no token in URL
-  useEffect(() => {
-    if (!token) navigate('/login', { replace: true });
-  }, [token, navigate]);
+  // Redirect if no token in URL
+  if (!token) {
+    navigate('/login', { replace: true });
+    return null;
+  }
+
+  // Validate token on page load before showing form
+  const { isLoading: isValidating, isError: isTokenInvalid, error: validationError } = useQuery({
+    queryKey: ['validate-invite', token],
+    queryFn: () => validateInvite(token),
+    retry: false,
+  });
 
   const { mutate, isPending } = useMutation({
     mutationFn: (password: string) => acceptInvite({ token: token!, password }),
@@ -29,7 +37,7 @@ export const AcceptInvitePage = () => {
     },
     onError: (error: unknown) => {
       const message = (error as any)?.response?.data?.message;
-      setErrorMessage(message || 'Invalid or expired invite link');
+      setErrorMessage(message || 'Something went wrong. Please try again.');
     },
   });
 
@@ -37,8 +45,6 @@ export const AcceptInvitePage = () => {
     setErrorMessage(null);
     mutate(password);
   };
-
-  if (!token) return null;
 
   return (
     <div style={styles.container}>
@@ -48,66 +54,82 @@ export const AcceptInvitePage = () => {
           <Text type="secondary">Set up your password</Text>
         </div>
 
-        {errorMessage && (
+        {isValidating ? (
+          <div style={styles.center}>
+            <Spin size="large" />
+            <Text type="secondary" style={{ marginTop: 16 }}>Verifying invite link...</Text>
+          </div>
+        ) : isTokenInvalid ? (
           <Alert
-            message={errorMessage}
+            message={(validationError as any)?.response?.data?.message || 'Invalid or expired invite link'}
+            description="Please contact your administrator for a new invite link."
             type="error"
             showIcon
-            style={{ marginBottom: 24 }}
           />
+        ) : (
+          <>
+            {errorMessage && (
+              <Alert
+                message={errorMessage}
+                type="error"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+            )}
+
+            <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
+              <Form.Item
+                name="password"
+                label="New Password"
+                rules={[
+                  { required: true, message: 'Password is required' },
+                  { min: 8, message: 'Password must be at least 8 characters' },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Enter new password"
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="confirmPassword"
+                label="Confirm Password"
+                dependencies={['password']}
+                rules={[
+                  { required: true, message: 'Please confirm your password' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue('password') === value) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(new Error('Passwords do not match'));
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Confirm new password"
+                  size="large"
+                />
+              </Form.Item>
+
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  block
+                  loading={isPending}
+                >
+                  Set Password & Sign In
+                </Button>
+              </Form.Item>
+            </Form>
+          </>
         )}
-
-        <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
-          <Form.Item
-            name="password"
-            label="New Password"
-            rules={[
-              { required: true, message: 'Password is required' },
-              { min: 8, message: 'Password must be at least 8 characters' },
-            ]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Enter new password"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="confirmPassword"
-            label="Confirm Password"
-            dependencies={['password']}
-            rules={[
-              { required: true, message: 'Please confirm your password' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('Passwords do not match'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Confirm new password"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              block
-              loading={isPending}
-            >
-              Set Password & Sign In
-            </Button>
-          </Form.Item>
-        </Form>
       </Card>
     </div>
   );
@@ -128,5 +150,11 @@ const styles = {
   header: {
     textAlign: 'center' as const,
     marginBottom: 32,
+  },
+  center: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    padding: '24px 0',
   },
 };
