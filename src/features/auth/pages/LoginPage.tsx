@@ -20,7 +20,7 @@ export const LoginPage = () => {
       <Card style={styles.card}>
         <div style={styles.header}>
           <Title level={3} style={{ margin: 0 }}>RetailPOS</Title>
-          <Text type="secondary">Super Admin</Text>
+          <Text type="secondary">Sign in to your account</Text>
         </div>
 
         {error && (

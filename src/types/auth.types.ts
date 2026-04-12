@@ -20,6 +20,7 @@ export interface UserResponse {
   email: string;
   role: UserRole;
   tenantId: string;
+  storeId: string | null;
 }
 
 export interface AuthResponse {

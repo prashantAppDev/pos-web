@@ -1,5 +1,6 @@
 import { Button, Popconfirm, Space, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useNavigate } from 'react-router-dom';
 import { useDeleteTenant, useToggleTenantStatus } from '../hooks/useTenants';
 import { TenantStatusBadge } from './TenantStatusBadge';
 import type { TenantResponse } from '../../../types/tenant.types';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export const TenantTable = ({ data, loading, page, pageSize, onPageChange, onEdit }: Props) => {
+  const navigate = useNavigate();
   const { mutate: toggleStatus, isPending: toggling } = useToggleTenantStatus();
   const { mutate: deleteTenant, isPending: deleting } = useDeleteTenant();
 
@@ -31,8 +33,16 @@ export const TenantTable = ({ data, loading, page, pageSize, onPageChange, onEdi
       dataIndex: 'name',
       render: (name: string, record) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{name}</div>
-          <Text type="secondary" style={{ fontSize: 12 }}>{record.email}</Text>
+          <Button
+            type="link"
+            style={{ padding: 0, fontWeight: 500, height: 'auto' }}
+            onClick={() => navigate(`/tenants/${record.id}`)}
+          >
+            {name}
+          </Button>
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>{record.email}</Text>
+          </div>
         </div>
       ),
     },
@@ -70,9 +80,12 @@ export const TenantTable = ({ data, loading, page, pageSize, onPageChange, onEdi
     {
       title: 'Actions',
       key: 'actions',
-      width: 180,
+      width: 220,
       render: (_, record) => (
         <Space>
+          <Button size="small" onClick={() => navigate(`/tenants/${record.id}`)}>
+            View
+          </Button>
           <Button size="small" onClick={() => onEdit(record)}>
             Edit
           </Button>

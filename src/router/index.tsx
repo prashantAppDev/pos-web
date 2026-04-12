@@ -3,17 +3,22 @@ import { AuthGuard } from './guards/AuthGuard';
 import { RoleGuard } from './guards/RoleGuard';
 import { RoleRedirect } from './components/RoleRedirect';
 import { SuperAdminLayout } from '../layouts/SuperAdminLayout';
+import { TenantLayout } from '../layouts/TenantLayout';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { AcceptInvitePage } from '../features/auth/pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../features/auth/pages/UnauthorizedPage';
 import { TenantListPage } from '../features/tenants/pages/TenantListPage';
+import { TenantDetailPage } from '../features/tenants/pages/TenantDetailPage';
+import { TenantStoreDetailPage } from '../features/tenants/pages/TenantStoreDetailPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import { StoreListPage } from '../features/stores/pages/StoreListPage';
+import { StoreDetailPage } from '../features/stores/pages/StoreDetailPage';
 
 export const router = createBrowserRouter([
   // ── Public ────────────────────────────────────────────────
-  { path: '/login',          element: <LoginPage /> },
-  { path: '/accept-invite',  element: <AcceptInvitePage /> },
-  { path: '/unauthorized',   element: <UnauthorizedPage /> },
+  { path: '/login',         element: <LoginPage /> },
+  { path: '/accept-invite', element: <AcceptInvitePage /> },
+  { path: '/unauthorized',  element: <UnauthorizedPage /> },
 
   // ── Authenticated ─────────────────────────────────────────
   {
@@ -26,7 +31,9 @@ export const router = createBrowserRouter([
           {
             element: <SuperAdminLayout />,
             children: [
-              { path: '/tenants', element: <TenantListPage /> },
+              { path: '/tenants',                                       element: <TenantListPage /> },
+              { path: '/tenants/:tenantId',                             element: <TenantDetailPage /> },
+              { path: '/tenants/:tenantId/stores/:storeId',             element: <TenantStoreDetailPage /> },
             ],
           },
         ],
@@ -36,8 +43,14 @@ export const router = createBrowserRouter([
       {
         element: <RoleGuard allowedRoles={['ADMIN', 'MANAGER', 'CASHIER']} />,
         children: [
-          // TODO: wrap in TenantLayout once built
-          { path: '/dashboard', element: <DashboardPage /> },
+          {
+            element: <TenantLayout />,
+            children: [
+              { path: '/dashboard',        element: <DashboardPage /> },
+              { path: '/stores',           element: <StoreListPage /> },
+              { path: '/stores/:storeId',  element: <StoreDetailPage /> },
+            ],
+          },
         ],
       },
     ],
