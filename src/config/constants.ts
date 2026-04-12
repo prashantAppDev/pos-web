@@ -11,6 +11,8 @@ export const QUERY_KEYS = {
   saStores: 'saStores',
   saStore: 'saStore',
   saCounters: 'saCounters',
+  users: 'users',
+  user: 'user',
 } as const;
 
 export const PAGE_SIZE_DEFAULT = 10;

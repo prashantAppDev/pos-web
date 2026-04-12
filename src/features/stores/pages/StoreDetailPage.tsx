@@ -11,21 +11,30 @@ import {
 import type { AxiosError } from 'axios';
 import { useDeleteStore, useStore, useToggleStoreStatus } from '../hooks/useStores';
 import { useCounterList, useDeleteCounter, useToggleCounterStatus } from '../hooks/useCounters';
+import { useUserList, useToggleUserStatus, useDeleteUser } from '../../users/hooks/useUsers';
+import { useAuthStore } from '../../../store/auth.store';
 import { StoreFormModal } from '../components/StoreFormModal';
 import { CounterFormModal } from '../components/CounterFormModal';
+import { InviteUserModal } from '../../users/components/InviteUserModal';
+import { EditUserModal } from '../../users/components/EditUserModal';
 import { PAGE_SIZE_DEFAULT } from '../../../config/constants';
 import type { CounterResponse, StoreResponse } from '../../../types/store.types';
+import type { StaffUserResponse } from '../../../types/user.types';
 
 const { Title } = Typography;
 
 export const StoreDetailPage = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
+  const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN');
 
   const [counterPage, setCounterPage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [counterModalOpen, setCounterModalOpen] = useState(false);
   const [editingCounter, setEditingCounter] = useState<CounterResponse | undefined>();
+  const [inviteUserOpen, setInviteUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<StaffUserResponse | undefined>();
 
   const { data: store, isLoading: storeLoading } = useStore(storeId!);
   const { data: counters, isLoading: countersLoading } = useCounterList(storeId!, {
@@ -33,10 +42,40 @@ export const StoreDetailPage = () => {
     size: PAGE_SIZE_DEFAULT,
   });
 
+  const { data: users, isLoading: usersLoading } = useUserList({
+    page: userPage - 1,
+    size: PAGE_SIZE_DEFAULT,
+    storeId: storeId,
+    enabled: isAdmin,
+  });
+
   const { mutate: toggleStore } = useToggleStoreStatus();
   const { mutate: deleteStore } = useDeleteStore();
   const { mutate: toggleCounter } = useToggleCounterStatus(storeId!);
   const { mutate: deleteCounter } = useDeleteCounter(storeId!);
+  const { mutate: toggleUser } = useToggleUserStatus();
+  const { mutate: deleteUser } = useDeleteUser();
+
+  const handleToggleUser = (user: StaffUserResponse) => {
+    toggleUser(
+      { id: user.id, isActive: !user.isActive },
+      {
+        onError: (error: unknown) => {
+          const message = (error as AxiosError<{ message: string }>)?.response?.data?.message;
+          notification.error({ message: 'Failed to update user status', description: message });
+        },
+      }
+    );
+  };
+
+  const handleDeleteUser = (user: StaffUserResponse) => {
+    deleteUser(user.id, {
+      onError: (error: unknown) => {
+        const message = (error as AxiosError<{ message: string }>)?.response?.data?.message;
+        notification.error({ message: 'Failed to delete user', description: message });
+      },
+    });
+  };
 
   const handleToggleStore = (store: StoreResponse) => {
     toggleStore(
@@ -210,6 +249,92 @@ export const StoreDetailPage = () => {
         }}
       />
 
+      {/* Staff — admin only */}
+      {isAdmin && (
+        <>
+          <div style={{ ...styles.countersHeader, marginTop: 32 }}>
+            <Title level={5} style={{ margin: 0 }}>Staff</Title>
+            <Button type="primary" icon={<PlusOutlined />} size="small" onClick={() => setInviteUserOpen(true)}>
+              Invite Staff
+            </Button>
+          </div>
+
+          <Table
+            rowKey="id"
+            columns={[
+              { title: 'Name', dataIndex: 'name' },
+              { title: 'Email', dataIndex: 'email' },
+              {
+                title: 'Role',
+                dataIndex: 'role',
+                width: 100,
+                render: (role: string) => (
+                  <Tag color={role === 'MANAGER' ? 'blue' : 'purple'}>
+                    {role.charAt(0) + role.slice(1).toLowerCase()}
+                  </Tag>
+                ),
+              },
+              {
+                title: 'Verified',
+                dataIndex: 'isVerified',
+                width: 90,
+                render: (v: boolean) => v
+                  ? <Tag color="success">Verified</Tag>
+                  : <Tag color="warning">Pending</Tag>,
+              },
+              {
+                title: 'Status',
+                dataIndex: 'isActive',
+                width: 100,
+                render: (isActive: boolean) =>
+                  isActive
+                    ? <Tag icon={<CheckCircleOutlined />} color="success">Active</Tag>
+                    : <Tag icon={<PauseCircleOutlined />} color="default">Inactive</Tag>,
+              },
+              {
+                title: 'Actions',
+                key: 'actions',
+                width: 210,
+                render: (_: unknown, record: StaffUserResponse) => (
+                  <Space>
+                    <Button size="small" onClick={() => setEditingUser(record)}>Edit</Button>
+                    <Popconfirm
+                      title={record.isActive ? 'Deactivate this user?' : 'Activate this user?'}
+                      onConfirm={() => handleToggleUser(record)}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button size="small">{record.isActive ? 'Deactivate' : 'Activate'}</Button>
+                    </Popconfirm>
+                    {!record.isActive && (
+                      <Popconfirm
+                        title="Delete this user? This cannot be undone."
+                        onConfirm={() => handleDeleteUser(record)}
+                        okText="Delete"
+                        okButtonProps={{ danger: true }}
+                        cancelText="Cancel"
+                      >
+                        <Button size="small" danger>Delete</Button>
+                      </Popconfirm>
+                    )}
+                  </Space>
+                ),
+              },
+            ]}
+            dataSource={users?.content}
+            loading={usersLoading}
+            pagination={{
+              current: userPage,
+              pageSize: PAGE_SIZE_DEFAULT,
+              total: users?.totalElements ?? 0,
+              onChange: setUserPage,
+              showTotal: (total) => `${total} staff`,
+              showSizeChanger: false,
+            }}
+          />
+        </>
+      )}
+
       <StoreFormModal
         open={storeModalOpen}
         onClose={() => setStoreModalOpen(false)}
@@ -222,6 +347,21 @@ export const StoreDetailPage = () => {
         storeId={storeId!}
         counter={editingCounter}
       />
+
+      <InviteUserModal
+        open={inviteUserOpen}
+        onClose={() => setInviteUserOpen(false)}
+        storeId={storeId!}
+        storeName={store.name}
+      />
+
+      {editingUser && (
+        <EditUserModal
+          open={!!editingUser}
+          onClose={() => setEditingUser(undefined)}
+          user={editingUser}
+        />
+      )}
     </div>
   );
 };

@@ -15,6 +15,10 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+// Shared refresh promise — ensures only one refresh call is in flight at a time.
+// Multiple concurrent 401s all wait for the same promise instead of each rotating the token.
+let refreshPromise: Promise<{ accessToken: string; user: unknown }> | null = null;
+
 // On 401, attempt silent refresh once using HttpOnly cookie, then logout
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -25,10 +29,15 @@ axiosInstance.interceptors.response.use(
       original._retry = true;
 
       try {
-        // No body needed — browser sends the refreshToken HttpOnly cookie automatically
-        const { data } = await axiosInstance.post('/auth/refresh');
+        if (!refreshPromise) {
+          refreshPromise = axiosInstance
+            .post('/auth/refresh')
+            .then((res) => res.data)
+            .finally(() => { refreshPromise = null; });
+        }
 
-        useAuthStore.getState().setAuth(data.accessToken, data.user);
+        const data = await refreshPromise;
+        useAuthStore.getState().setAuth(data.accessToken, data.user as any);
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return axiosInstance(original);
       } catch {
