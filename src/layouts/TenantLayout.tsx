@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd';
 import {
+  AppstoreOutlined,
   DashboardOutlined,
+  HistoryOutlined,
+  InboxOutlined,
   LogoutOutlined,
+  RollbackOutlined,
+  ShoppingCartOutlined,
   ShopOutlined,
+  TagsOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useLogout } from '../features/auth/hooks/useAuth';
@@ -28,6 +34,16 @@ const getNavItems = (role: string, storeId?: string | null) => {
       icon: <ShopOutlined />,
       label: <Link to="/stores">Stores</Link>,
     });
+    items.push({
+      key: '/categories',
+      icon: <TagsOutlined />,
+      label: <Link to="/categories">Categories</Link>,
+    });
+    items.push({
+      key: '/products',
+      icon: <AppstoreOutlined />,
+      label: <Link to="/products">Products</Link>,
+    });
   }
 
   if (role === 'MANAGER' && storeId) {
@@ -35,6 +51,39 @@ const getNavItems = (role: string, storeId?: string | null) => {
       key: `/stores/${storeId}`,
       icon: <ShopOutlined />,
       label: <Link to={`/stores/${storeId}`}>My Store</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/inventory`,
+      icon: <InboxOutlined />,
+      label: <Link to={`/stores/${storeId}/inventory`}>Inventory</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/pos`,
+      icon: <ShoppingCartOutlined />,
+      label: <Link to={`/stores/${storeId}/pos`}>POS</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/sales`,
+      icon: <HistoryOutlined />,
+      label: <Link to={`/stores/${storeId}/sales`}>Sales</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/returns`,
+      icon: <RollbackOutlined />,
+      label: <Link to={`/stores/${storeId}/returns`}>Returns</Link>,
+    });
+  }
+
+  if (role === 'CASHIER' && storeId) {
+    items.push({
+      key: `/stores/${storeId}/pos`,
+      icon: <ShoppingCartOutlined />,
+      label: <Link to={`/stores/${storeId}/pos`}>POS</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/returns`,
+      icon: <RollbackOutlined />,
+      label: <Link to={`/stores/${storeId}/returns`}>Returns</Link>,
     });
   }
 

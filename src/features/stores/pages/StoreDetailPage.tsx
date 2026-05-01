@@ -196,6 +196,10 @@ export const StoreDetailPage = () => {
             : <Tag icon={<PauseCircleOutlined />} color="default">Inactive</Tag>}
         </Space>
         <Space>
+          <Button onClick={() => navigate(`/stores/${storeId}/inventory`)}>Inventory</Button>
+          <Button onClick={() => navigate(`/stores/${storeId}/pos`)}>POS</Button>
+          <Button onClick={() => navigate(`/stores/${storeId}/sales`)}>Sales</Button>
+          <Button onClick={() => navigate(`/stores/${storeId}/returns`)}>Returns</Button>
           <Button onClick={() => setStoreModalOpen(true)}>Edit Store</Button>
           <Popconfirm
             title={store.isActive ? 'Deactivate this store?' : 'Activate this store?'}

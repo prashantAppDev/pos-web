@@ -13,6 +13,13 @@ import { TenantStoreDetailPage } from '../features/tenants/pages/TenantStoreDeta
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { StoreListPage } from '../features/stores/pages/StoreListPage';
 import { StoreDetailPage } from '../features/stores/pages/StoreDetailPage';
+import { CategoryListPage } from '../features/categories/pages/CategoryListPage';
+import { ProductListPage } from '../features/products/pages/ProductListPage';
+import { InventoryPage } from '../features/inventory/pages/InventoryPage';
+import { GoodsReceiptDetailPage } from '../features/inventory/pages/GoodsReceiptDetailPage';
+import { PosPage } from '../features/sales/pages/PosPage';
+import { SalesHistoryPage } from '../features/sales/pages/SalesHistoryPage';
+import { ReturnsHistoryPage } from '../features/returns/pages/ReturnsHistoryPage';
 
 export const router = createBrowserRouter([
   // ── Public ────────────────────────────────────────────────
@@ -49,6 +56,13 @@ export const router = createBrowserRouter([
               { path: '/dashboard',        element: <DashboardPage /> },
               { path: '/stores',           element: <StoreListPage /> },
               { path: '/stores/:storeId',  element: <StoreDetailPage /> },
+              { path: '/categories',                                        element: <CategoryListPage /> },
+              { path: '/products',                                          element: <ProductListPage /> },
+              { path: '/stores/:storeId/inventory',                              element: <InventoryPage /> },
+              { path: '/stores/:storeId/inventory/receipts/:receiptId',        element: <GoodsReceiptDetailPage /> },
+              { path: '/stores/:storeId/pos',                                  element: <PosPage /> },
+              { path: '/stores/:storeId/sales',                                element: <SalesHistoryPage /> },
+              { path: '/stores/:storeId/returns',                              element: <ReturnsHistoryPage /> },
             ],
           },
         ],
