@@ -2,9 +2,8 @@ export type PaymentMethod = 'CASH' | 'CARD' | 'UPI';
 export type PaymentStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
 
 export interface SaleItemRequest {
-  productId: string;
+  batchId: string;
   quantity: number;
-  mrp: number;
 }
 
 export interface CreateSaleRequest {
@@ -61,6 +60,7 @@ export interface SaleListParams {
 }
 
 export interface CartItem {
+  batchId: string;
   productId: string;
   productName: string;
   barcode: string | null;

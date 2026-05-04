@@ -30,10 +30,10 @@ export const PosPage = () => {
   const [completedSale, setCompletedSale] = useState<SaleResponse | null>(null);
   const [completedCart, setCompletedCart] = useState<CartItem[]>([]);
 
-  // Multi-MRP picker state
+  // Batch picker state (when product has multiple batches)
   const [batchPickerOpen, setBatchPickerOpen] = useState(false);
   const [pendingBatches, setPendingBatches] = useState<{ productId: string; productName: string; barcode: string | null; batches: BatchResponse[] } | null>(null);
-  const [selectedMrp, setSelectedMrp] = useState<number | null>(null);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
 
   const { data: countersPage } = useCounterList(storeId!, { page: 0, size: 100, isActive: true });
   const activeCounters = countersPage?.content ?? [];
@@ -46,18 +46,17 @@ export const PosPage = () => {
   const grandTotal = cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
   const change = cashTendered != null ? cashTendered - grandTotal : null;
 
-  const addBatchToCart = (productId: string, productName: string, barcode: string | null, batch: BatchResponse, allSameMrpBatches: BatchResponse[]) => {
-    const availableQty = allSameMrpBatches.reduce((s, b) => s + b.quantityRemaining, 0);
+  const addBatchToCart = (productId: string, productName: string, barcode: string | null, batch: BatchResponse) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.productId === productId && c.mrp === batch.mrp);
+      const existing = prev.find((c) => c.batchId === batch.id);
       if (existing) {
         return prev.map((c) =>
-          c.productId === productId && c.mrp === batch.mrp
+          c.batchId === batch.id
             ? { ...c, quantity: Math.min(c.quantity + 1, c.availableQty) }
             : c
         );
       }
-      return [...prev, { productId, productName, barcode, mrp: batch.mrp, sellingPrice: batch.sellingPrice, quantity: 1, availableQty }];
+      return [...prev, { batchId: batch.id, productId, productName, barcode, mrp: batch.mrp, sellingPrice: batch.sellingPrice, quantity: 1, availableQty: batch.quantityRemaining }];
     });
     setBarcodeInput('');
     setTimeout(() => barcodeRef.current?.focus(), 50);
@@ -85,13 +84,11 @@ export const PosPage = () => {
       }
 
       // Group by MRP
-      const mrps = [...new Set(available.map((b) => b.mrp))];
-      if (mrps.length === 1) {
-        const sameMrp = available.filter((b) => b.mrp === mrps[0]);
-        addBatchToCart(product.id, product.name, product.barcode, sameMrp[0], sameMrp);
+      if (available.length === 1) {
+        addBatchToCart(product.id, product.name, product.barcode, available[0]);
       } else {
         setPendingBatches({ productId: product.id, productName: product.name, barcode: product.barcode, batches: available });
-        setSelectedMrp(mrps[0]);
+        setSelectedBatchId(available[0].id);
         setBatchPickerOpen(true);
       }
     } catch {
@@ -101,23 +98,21 @@ export const PosPage = () => {
     }
   };
 
-  const handlePickMrp = () => {
-    if (!pendingBatches || selectedMrp == null) return;
-    const sameMrp = pendingBatches.batches.filter((b) => b.mrp === selectedMrp);
-    addBatchToCart(pendingBatches.productId, pendingBatches.productName, pendingBatches.barcode, sameMrp[0], sameMrp);
+  const handlePickBatch = () => {
+    if (!pendingBatches || !selectedBatchId) return;
+    const batch = pendingBatches.batches.find((b) => b.id === selectedBatchId)!;
+    addBatchToCart(pendingBatches.productId, pendingBatches.productName, pendingBatches.barcode, batch);
     setBatchPickerOpen(false);
     setPendingBatches(null);
   };
 
-  const updateQty = (productId: string, mrp: number, qty: number | null) => {
+  const updateQty = (batchId: string, qty: number | null) => {
     if (!qty || qty < 1) return;
-    setCart((prev) =>
-      prev.map((c) => c.productId === productId && c.mrp === mrp ? { ...c, quantity: qty } : c)
-    );
+    setCart((prev) => prev.map((c) => c.batchId === batchId ? { ...c, quantity: qty } : c));
   };
 
-  const removeItem = (productId: string, mrp: number) => {
-    setCart((prev) => prev.filter((c) => !(c.productId === productId && c.mrp === mrp)));
+  const removeItem = (batchId: string) => {
+    setCart((prev) => prev.filter((c) => c.batchId !== batchId));
   };
 
   const handlePlaceOrder = () => {
@@ -127,7 +122,7 @@ export const PosPage = () => {
         storeId: storeId!,
         request: {
           counterId,
-          items: cart.map((c) => ({ productId: c.productId, quantity: c.quantity, mrp: c.mrp })),
+          items: cart.map((c) => ({ batchId: c.batchId, quantity: c.quantity })),
           paymentMethod,
           upiRefNumber: paymentMethod === 'UPI' && upiRef ? upiRef : undefined,
         },
@@ -188,7 +183,7 @@ export const PosPage = () => {
           min={1}
           max={record.availableQty}
           value={record.quantity}
-          onChange={(v) => updateQty(record.productId, record.mrp, v)}
+          onChange={(v) => updateQty(record.batchId, v)}
           size="small"
           style={{ width: 80 }}
         />
@@ -210,7 +205,7 @@ export const PosPage = () => {
           danger
           icon={<DeleteOutlined />}
           size="small"
-          onClick={() => removeItem(record.productId, record.mrp)}
+          onClick={() => removeItem(record.batchId)}
         />
       ),
     },
@@ -240,7 +235,7 @@ export const PosPage = () => {
           </div>
 
           <Table
-            rowKey={(r) => `${r.productId}-${r.mrp}`}
+            rowKey="batchId"
             columns={cartColumns}
             dataSource={cart}
             pagination={false}
@@ -340,9 +335,9 @@ export const PosPage = () => {
 
       {/* Multi-MRP picker */}
       <Modal
-        title="Multiple prices available — select MRP"
+        title="Multiple batches available — select one"
         open={batchPickerOpen}
-        onOk={handlePickMrp}
+        onOk={handlePickBatch}
         onCancel={() => { setBatchPickerOpen(false); setBarcodeInput(''); setTimeout(() => barcodeRef.current?.focus(), 50); }}
         okText="Add to Cart"
         destroyOnHidden
@@ -351,19 +346,17 @@ export const PosPage = () => {
           <>
             <Text strong>{pendingBatches.productName}</Text>
             <Radio.Group
-              value={selectedMrp}
-              onChange={(e) => setSelectedMrp(e.target.value)}
+              value={selectedBatchId}
+              onChange={(e) => setSelectedBatchId(e.target.value)}
               style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}
             >
-              {[...new Set(pendingBatches.batches.map((b) => b.mrp))].map((mrp) => {
-                const b = pendingBatches.batches.find((x) => x.mrp === mrp)!;
-                const qty = pendingBatches.batches.filter((x) => x.mrp === mrp).reduce((s, x) => s + x.quantityRemaining, 0);
-                return (
-                  <Radio key={mrp} value={mrp}>
-                    MRP ₹{mrp.toFixed(2)} · Price ₹{b.sellingPrice.toFixed(2)} · {qty} in stock
-                  </Radio>
-                );
-              })}
+              {pendingBatches.batches.map((b) => (
+                <Radio key={b.id} value={b.id}>
+                  MRP ₹{b.mrp.toFixed(2)} · Price ₹{b.sellingPrice.toFixed(2)} · {b.quantityRemaining} in stock
+                  {b.batchNumber ? ` · Batch: ${b.batchNumber}` : ''}
+                  {b.expiryDate ? ` · Exp: ${b.expiryDate}` : ''}
+                </Radio>
+              ))}
             </Radio.Group>
           </>
         )}
