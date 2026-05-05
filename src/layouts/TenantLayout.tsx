@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd';
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   DashboardOutlined,
   HistoryOutlined,
   InboxOutlined,
@@ -71,6 +72,11 @@ const getNavItems = (role: string, storeId?: string | null) => {
       key: `/stores/${storeId}/returns`,
       icon: <RollbackOutlined />,
       label: <Link to={`/stores/${storeId}/returns`}>Returns</Link>,
+    });
+    items.push({
+      key: `/stores/${storeId}/reports`,
+      icon: <BarChartOutlined />,
+      label: <Link to={`/stores/${storeId}/reports`}>Reports</Link>,
     });
   }
 

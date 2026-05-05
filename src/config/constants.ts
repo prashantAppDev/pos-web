@@ -32,6 +32,8 @@ export const QUERY_KEYS = {
   sale: 'sale',
   returns: 'returns',
   saleReturn: 'saleReturn',
+  salesReport: 'salesReport',
+  topProductsReport: 'topProductsReport',
 } as const;
 
 export const PAGE_SIZE_DEFAULT = 10;

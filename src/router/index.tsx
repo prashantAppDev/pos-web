@@ -20,6 +20,7 @@ import { GoodsReceiptDetailPage } from '../features/inventory/pages/GoodsReceipt
 import { PosPage } from '../features/sales/pages/PosPage';
 import { SalesHistoryPage } from '../features/sales/pages/SalesHistoryPage';
 import { ReturnsHistoryPage } from '../features/returns/pages/ReturnsHistoryPage';
+import { ReportsPage } from '../features/reports/pages/ReportsPage';
 
 export const router = createBrowserRouter([
   // ── Public ────────────────────────────────────────────────
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
               { path: '/stores/:storeId/pos',                                  element: <PosPage /> },
               { path: '/stores/:storeId/sales',                                element: <SalesHistoryPage /> },
               { path: '/stores/:storeId/returns',                              element: <ReturnsHistoryPage /> },
+              { path: '/stores/:storeId/reports',                              element: <ReportsPage /> },
             ],
           },
         ],

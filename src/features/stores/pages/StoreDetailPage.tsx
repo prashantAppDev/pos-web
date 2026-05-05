@@ -200,6 +200,7 @@ export const StoreDetailPage = () => {
           <Button onClick={() => navigate(`/stores/${storeId}/pos`)}>POS</Button>
           <Button onClick={() => navigate(`/stores/${storeId}/sales`)}>Sales</Button>
           <Button onClick={() => navigate(`/stores/${storeId}/returns`)}>Returns</Button>
+          <Button onClick={() => navigate(`/stores/${storeId}/reports`)}>Reports</Button>
           <Button onClick={() => setStoreModalOpen(true)}>Edit Store</Button>
           <Popconfirm
             title={store.isActive ? 'Deactivate this store?' : 'Activate this store?'}
